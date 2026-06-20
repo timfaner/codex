@@ -926,7 +926,17 @@ async fn stdio_mcp_tool_call_includes_sandbox_state_meta() -> anyhow::Result<()>
     let sandbox_meta = meta
         .get(MCP_SANDBOX_STATE_META_CAPABILITY)
         .expect("sandbox state metadata should be present");
-    assert_eq!(sandbox_meta.get("sandboxPolicy"), None);
+    let expected_sandbox_policy = serde_json::to_value(
+        PermissionProfile::read_only().to_legacy_sandbox_policy(&fixture.config.cwd)?,
+    )?;
+    assert_eq!(
+        sandbox_meta.get("sandboxPolicy"),
+        Some(&expected_sandbox_policy)
+    );
+    assert_eq!(
+        sandbox_meta.get("permissionProfile"),
+        Some(&serde_json::to_value(PermissionProfile::read_only())?)
+    );
     let expected_sandbox_cwd = PathUri::from_abs_path(&fixture.config.cwd).to_string();
     assert_eq!(
         sandbox_meta.get("sandboxCwd").and_then(Value::as_str),
